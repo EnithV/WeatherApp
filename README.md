@@ -72,6 +72,13 @@ La aplicación detecta varios casos comunes y muestra mensajes claros:
   - Si hay un problema de conexión o la API responde con un error HTTP, se muestra `Error al consultar el clima:` seguido del detalle.
 - Error interno de datos:
   - Si la respuesta de la API no contiene los campos esperados, se lanza un error con contexto específico.
+- Reintentos automáticos:
+  - Si la API responde con `429` o hay un error de servidor transitorio, la función intenta nuevamente hasta 2 veces con backoff exponencial suave.
+
+## Validación y seguridad
+
+- En el frontend se valida que el nombre de la ciudad no esté vacío, no supere 100 caracteres y solo contenga caracteres razonables (letras, números, espacios y algunos símbolos comunes).
+- El texto de ciudad y país se muestra con `textContent` en lugar de `innerHTML` para evitar riesgos de inyección de contenido en la UI.
 
 ## Notas sobre la API
 

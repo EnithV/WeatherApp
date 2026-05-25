@@ -9,49 +9,78 @@ import { OPEN_METEO_BASE, OPEN_METEO_GEOCODING, SIMULATE_DELAY_MS, SIMULATE_FORC
  */
 async function fetchJson(url, context) {
   const FETCH_TIMEOUT_MS = 5000; // tiempo máximo de espera para la petición (ms)
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+  const MAX_RETRIES = 2;
+  const BASE_RETRY_DELAY_MS = 500;
+  let attempt = 0;
 
-  try {
-    // Simulación: forzar un status HTTP (ej. 500) sin hacer la llamada real.
-    if (SIMULATE_FORCE_STATUS) {
-      const status = SIMULATE_FORCE_STATUS;
-      const statusText = status >= 500 ? 'Internal Server Error' : 'Error';
-      throw new Error(`${context}: ${status} ${statusText}`);
-    }
+  while (true) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
 
-    // Simulación: retraso de red antes de iniciar la petición.
-    if (SIMULATE_DELAY_MS && SIMULATE_DELAY_MS > 0) {
-      await new Promise((resolve, reject) => {
-        const t = setTimeout(resolve, SIMULATE_DELAY_MS);
-        controller.signal.addEventListener('abort', () => {
-          clearTimeout(t);
-          reject(new Error(`${context}: timeout después de ${FETCH_TIMEOUT_MS} ms`));
-        }, { once: true });
-      });
-    }
-
-    let response;
     try {
-      response = await fetch(url, { signal: controller.signal });
-    } catch (error) {
-      if (error.name === 'AbortError') {
-        throw new Error(`${context}: timeout después de ${FETCH_TIMEOUT_MS} ms`);
+      // Simulación: forzar un status HTTP (ej. 500) sin hacer la llamada real.
+      if (SIMULATE_FORCE_STATUS) {
+        const status = SIMULATE_FORCE_STATUS;
+        const statusText = status >= 500 ? 'Internal Server Error' : 'Error';
+        throw new Error(`${context}: ${status} ${statusText}`);
       }
-      throw new Error(`${context}: error de red o conexión (${error.message})`);
-    }
 
-    if (!response.ok) {
-      throw new Error(`${context}: ${response.status} ${response.statusText}`);
-    }
+      // Simulación: retraso de red antes de iniciar la petición.
+      if (SIMULATE_DELAY_MS && SIMULATE_DELAY_MS > 0) {
+        await new Promise((resolve, reject) => {
+          const t = setTimeout(resolve, SIMULATE_DELAY_MS);
+          controller.signal.addEventListener('abort', () => {
+            clearTimeout(t);
+            reject(new Error(`${context}: timeout después de ${FETCH_TIMEOUT_MS} ms`));
+          }, { once: true });
+        });
+      }
 
-    try {
-      return await response.json();
-    } catch (error) {
-      throw new Error(`${context}: respuesta JSON inválida (${error.message})`);
+      let response;
+      try {
+        response = await fetch(url, { signal: controller.signal });
+      } catch (error) {
+        if (error.name === 'AbortError') {
+          throw new Error(`${context}: timeout después de ${FETCH_TIMEOUT_MS} ms`);
+        }
+
+        if (attempt < MAX_RETRIES) {
+          attempt += 1;
+          const retryDelay = BASE_RETRY_DELAY_MS * 2 ** (attempt - 1);
+          await new Promise((resolve) => setTimeout(resolve, retryDelay));
+          continue;
+        }
+
+        throw new Error(`${context}: error de red o conexión (${error.message})`);
+      }
+
+      if (!response.ok) {
+        const status = response.status;
+        const statusText = response.statusText;
+        const isRetryable = status === 429 || (status >= 500 && status < 600);
+
+        if (isRetryable && attempt < MAX_RETRIES) {
+          attempt += 1;
+          const retryDelay = BASE_RETRY_DELAY_MS * 2 ** (attempt - 1);
+          await new Promise((resolve) => setTimeout(resolve, retryDelay));
+          continue;
+        }
+
+        if (status === 429) {
+          throw new Error(`${context}: límite de tasa alcanzado (429 ${statusText}). Intente de nuevo más tarde.`);
+        }
+
+        throw new Error(`${context}: ${status} ${statusText}`);
+      }
+
+      try {
+        return await response.json();
+      } catch (error) {
+        throw new Error(`${context}: respuesta JSON inválida (${error.message})`);
+      }
+    } finally {
+      clearTimeout(timeoutId);
     }
-  } finally {
-    clearTimeout(timeoutId);
   }
 }
 
