@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Weather App — Clima en tiempo real</title>
+  <!-- Bootstrap 5 -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Iconos de Bootstrap -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- Fondo animado -->
+  <div class="bg-animation">
+    <div class="circle x1"></div>
+    <div class="circle x2"></div>
+    <div class="circle x3"></div>
+  </div>
+
+  <main class="container">
+    <!-- Encabezado con icono -->
+    <div class="text-center mb-4">
+      <div class="app-icon mb-3">
+        <i class="bi bi-cloud-sun-fill"></i>
+      </div>
+      <h1 class="display-5 fw-bold">Weather App</h1>
+      <p class="lead">Consulta el clima actual de cualquier ciudad usando datos de Open‑Meteo.</p>
+      <p class="text-muted small">Temperatura, humedad, viento y precipitación en tiempo real.</p>
+    </div>
+
+    <!-- Buscador -->
+    <form id="searchForm" class="search-bar mb-4" aria-label="Buscar ciudad">
+      <div class="input-group input-group-lg shadow-sm">
+        <span class="input-group-text bg-transparent border-0"><i class="bi bi-search"></i></span>
+        <input id="cityInput" type="text" class="form-control border-0" placeholder="Ej. Bogotá, Londres, Tokio..." aria-label="Nombre de la ciudad" required>
+        <button id="searchBtn" class="btn btn-primary px-4" type="submit">
+          <i class="bi bi-arrow-right-circle-fill me-2"></i>Consultar
+        </button>
+      </div>
+    </form>
+
+    <!-- Estado (cargando / error) -->
+    <div id="status" class="status text-center" aria-live="polite"></div>
+
+    <!-- Tarjeta de resultados -->
+    <section id="result" class="weather-card hidden">
+      <div class="card-body text-center">
+        <h2 id="place" class="city-name mb-3"><i class="bi bi-geo-alt-fill"></i> <span></span></h2>
+        <div class="weather-details">
+          <div class="detail-item">
+            <i class="bi bi-thermometer-half"></i>
+            <span class="label">Temperatura</span>
+            <span id="temperature" class="value"></span>
+          </div>
+          <div class="detail-item">
+            <i class="bi bi-droplet"></i>
+            <span class="label">Humedad</span>
+            <span id="humidity" class="value"></span>
+          </div>
+          <div class="detail-item">
+            <i class="bi bi-wind"></i>
+            <span class="label">Viento</span>
+            <span id="wind" class="value"></span>
+          </div>
+          <div class="detail-item">
+            <i class="bi bi-cloud-rain"></i>
+            <span class="label">Precipitación</span>
+            <span id="precipitation" class="value"></span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Pie -->
+    <footer class="text-center mt-4 text-muted small">
+      Datos proporcionados por <a href="https://open-meteo.com" target="_blank" class="text-decoration-none">Open‑Meteo</a> · Sin API Key · Interfaz ligera
+    </footer>
+  </main>
+
+  <!-- JavaScript (tu lógica actual) -->
+  <script>
+    const GEOCODING = 'https://geocoding-api.open-meteo.com/v1/search';
+    const FORECAST = 'https://api.open-meteo.com/v1/forecast';
+
+    const $form = document.getElementById('searchForm');
+    const $city = document.getElementById('cityInput');
+    const $status = document.getElementById('status');
+    const $result = document.getElementById('result');
+
+    function setStatus(text, isError = false) {
+      $status.textContent = text;
+      $status.className = isError ? 'status text-center text-danger' : 'status text-center text-muted';
+    }
+
+    function showResult(data, place) {
+      document.getElementById('place').innerHTML = `<i class="bi bi-geo-alt-fill"></i> ${place.name}, ${place.country}`;
+      document.getElementById('temperature').textContent = `${data.temperature} ${data.temperatureUnit}`;
+      document.getElementById('humidity').textContent = `${data.humidity} ${data.humidityUnit}`;
+      document.getElementById('wind').textContent = `${data.windSpeed} ${data.windSpeedUnit}`;
+      document.getElementById('precipitation').textContent = `${data.precipitation} ${data.precipitationUnit}`;
+      $result.classList.remove('hidden');
+    }
+
+    async function fetchJson(url, context) {
+      const resp = await fetch(url);
+      if (!resp.ok) throw new Error(`${context}: ${resp.status} ${resp.statusText}`);
+      return resp.json();
+    }
+
+    async function getCoordinates(city) {
+      const params = new URLSearchParams({ name: city.trim(), count: '1', language: 'es', format: 'json' });
+      const url = `${GEOCODING}?${params}`;
+      const data = await fetchJson(url, 'Geocoding');
+      if (!data.results || data.results.length === 0) throw new Error('Ciudad no encontrada');
+      const r = data.results[0];
+      return { latitude: Number(r.latitude), longitude: Number(r.longitude), name: r.name, country: r.country };
+    }
+
+    async function getWeatherDetails(lat, lon) {
+      const params = new URLSearchParams({ latitude: String(lat), longitude: String(lon), current_weather: 'true', hourly: 'relativehumidity_2m,precipitation', daily: 'precipitation_sum', temperature_unit: 'celsius', timezone: 'auto' });
+      const url = `${FORECAST}?${params}`;
+      const data = await fetchJson(url, 'Forecast');
+
+      if (!data.current_weather) throw new Error('Datos de clima no disponibles');
+
+      const temperature = Number(data.current_weather.temperature);
+      const temperatureUnit = String(data.current_weather_units?.temperature ?? '°C');
+      const windSpeed = Number(data.current_weather.windspeed);
+      const windSpeedUnit = String(data.current_weather_units?.windspeed ?? 'km/h');
+
+      const currentTimeRaw = String(data.current_weather.time ?? '');
+      const currentTimeMatch = currentTimeRaw.match(/^\d{4}-\d{2}-\d{2}T\d{2}/);
+      const currentTime = currentTimeMatch ? `${currentTimeMatch[0]}:00` : currentTimeRaw;
+
+      let timeIndex = 0;
+      if (Array.isArray(data.hourly?.time)) {
+        const idx = data.hourly.time.findIndex(t => String(t) === currentTime);
+        timeIndex = idx === -1 ? 0 : idx;
+      }
+
+      const humidity = Number(data.hourly?.relativehumidity_2m?.[timeIndex] ?? NaN);
+      const humidityUnit = String(data.hourly_units?.relativehumidity_2m ?? '%');
+      const hourlyPrecipitation = Number(data.hourly?.precipitation?.[timeIndex] ?? NaN);
+      const dailyPrecipitation = Number(data.daily?.precipitation_sum?.[0] ?? NaN);
+      const precipitationUnit = String(data.hourly_units?.precipitation ?? data.daily_units?.precipitation_sum ?? 'mm');
+
+      const precipitation = Number.isFinite(hourlyPrecipitation) ? hourlyPrecipitation : Number.isFinite(dailyPrecipitation) ? dailyPrecipitation : 0;
+
+      return { temperature, temperatureUnit, humidity, humidityUnit, windSpeed, windSpeedUnit, precipitation, precipitationUnit };
+    }
+
+    $form.addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      $result.classList.add('hidden');
+      setStatus('Consultando...');
+
+      const city = $city.value.trim();
+      if (!city) { setStatus('Ingrese el nombre de una ciudad.', true); return; }
+
+      try {
+        const place = await getCoordinates(city);
+        const details = await getWeatherDetails(place.latitude, place.longitude);
+        showResult(details, place);
+        setStatus('');
+      } catch (err) {
+        setStatus(err.message || 'Error al consultar el clima', true);
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,222 @@
+/* ===== Reset & Base ===== */
+* {
+  box-sizing: border-box;
+}
+html, body {
+  height: 100%;
+}
+body {
+  margin: 0;
+  font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  color: #e6eef8;
+  background: #0b0f1c;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* ===== Fondo animado con círculos ===== */
+.bg-animation {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  overflow: hidden;
+}
+.circle {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, rgba(79, 70, 229, 0.25), transparent);
+  animation: float 20s infinite ease-in-out;
+}
+.circle.x1 {
+  width: 600px;
+  height: 600px;
+  top: -200px;
+  left: -150px;
+  animation-duration: 18s;
+  background: radial-gradient(circle, rgba(79, 70, 229, 0.2), transparent);
+}
+.circle.x2 {
+  width: 400px;
+  height: 400px;
+  bottom: -150px;
+  right: -100px;
+  animation-duration: 22s;
+  animation-delay: -5s;
+  background: radial-gradient(circle, rgba(14, 165, 233, 0.2), transparent);
+}
+.circle.x3 {
+  width: 500px;
+  height: 500px;
+  top: 40%;
+  left: 50%;
+  animation-duration: 25s;
+  animation-delay: -10s;
+  background: radial-gradient(circle, rgba(139, 92, 246, 0.15), transparent);
+}
+@keyframes float {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-30px) rotate(5deg); }
+}
+
+/* ===== Contenedor principal (glass effect) ===== */
+.container {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 700px;
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 24px;
+  padding: 32px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+}
+
+/* ===== Encabezado ===== */
+.app-icon {
+  font-size: 3rem;
+  color: #4f46e5;
+  background: rgba(79, 70, 229, 0.15);
+  width: 80px;
+  height: 80px;
+  line-height: 80px;
+  border-radius: 50%;
+  margin: 0 auto;
+}
+h1 {
+  background: linear-gradient(135deg, #e0e7ff, #a5b4fc);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.lead {
+  color: #cbd5e1;
+}
+
+/* ===== Barra de búsqueda ===== */
+.search-bar .input-group {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition: 0.2s;
+}
+.search-bar .input-group:focus-within {
+  border-color: #4f46e5;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
+}
+.search-bar input {
+  background: transparent !important;
+  color: #fff !important;
+  font-size: 1rem;
+}
+.search-bar input::placeholder {
+  color: #94a3b8;
+}
+.search-bar .input-group-text {
+  color: #94a3b8;
+  border: none;
+}
+.search-bar .btn-primary {
+  background: #4f46e5;
+  border: none;
+  font-weight: 600;
+  transition: 0.2s;
+}
+.search-bar .btn-primary:hover {
+  background: #6366f1;
+}
+
+/* ===== Estado ===== */
+.status {
+  min-height: 24px;
+  margin: 8px 0;
+}
+
+/* ===== Tarjeta de clima ===== */
+.weather-card {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 20px;
+  padding: 24px;
+  margin-top: 16px;
+  backdrop-filter: blur(10px);
+  animation: fadeInUp 0.4s ease;
+}
+.hidden {
+  display: none;
+}
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.city-name {
+  font-size: 1.5rem;
+  color: #f1f5f9;
+}
+.city-name i {
+  color: #4f46e5;
+  margin-right: 6px;
+}
+
+.weather-details {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 16px;
+  margin-top: 20px;
+}
+.detail-item {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: 16px;
+  padding: 16px 12px;
+  text-align: center;
+  transition: 0.2s;
+}
+.detail-item:hover {
+  background: rgba(79, 70, 229, 0.1);
+  border-color: rgba(79, 70, 229, 0.3);
+  transform: translateY(-2px);
+}
+.detail-item i {
+  font-size: 1.8rem;
+  color: #4f46e5;
+  display: block;
+  margin-bottom: 6px;
+}
+.detail-item .label {
+  display: block;
+  font-size: 0.8rem;
+  color: #94a3b8;
+  margin-bottom: 4px;
+}
+.detail-item .value {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #e2e8f0;
+}
+
+/* ===== Footer ===== */
+footer a {
+  color: #6366f1;
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 520px) {
+  .container {
+    padding: 20px;
+    border-radius: 20px;
+  }
+  .weather-details {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
