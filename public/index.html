@@ -6,20 +6,22 @@
   <title>Weather App — Clima en tiempo real</title>
   <!-- Bootstrap 5 -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-  <!-- Iconos de Bootstrap -->
+  <!-- Bootstrap Icons -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
   <link rel="stylesheet" href="styles.css">
 </head>
-<body>
-  <!-- Fondo animado -->
+<body class="d-flex flex-column min-vh-100">
+  <!-- Animated background -->
   <div class="bg-animation">
     <div class="circle x1"></div>
     <div class="circle x2"></div>
     <div class="circle x3"></div>
   </div>
 
-  <main class="container">
-    <!-- Encabezado con icono -->
+  <div class="page-wrap flex-grow-1 d-flex align-items-center justify-content-center w-100">
+  <main class="container my-3">
+    <!-- Application header -->
     <div class="text-center mb-4">
       <div class="app-icon mb-3">
         <i class="bi bi-cloud-sun-fill"></i>
@@ -29,7 +31,7 @@
       <p class="text-muted small">Temperatura, humedad, viento y precipitación en tiempo real.</p>
     </div>
 
-    <!-- Buscador -->
+    <!-- City search form -->
     <form id="searchForm" class="search-bar mb-4" aria-label="Buscar ciudad">
       <div class="input-group input-group-lg shadow-sm">
         <span class="input-group-text bg-transparent border-0"><i class="bi bi-search"></i></span>
@@ -40,10 +42,10 @@
       </div>
     </form>
 
-    <!-- Estado (cargando / error) -->
+    <!-- Loading and error status -->
     <div id="status" class="status text-center" aria-live="polite"></div>
 
-    <!-- Tarjeta de resultados -->
+    <!-- Weather results card -->
     <section id="result" class="weather-card hidden">
       <div class="card-body text-center">
         <h2 id="place" class="city-name mb-3"><i class="bi bi-geo-alt-fill"></i> <span></span></h2>
@@ -71,14 +73,26 @@
         </div>
       </div>
     </section>
-
-    <!-- Pie -->
-    <footer class="text-center mt-4 text-muted small">
-      Datos proporcionados por <a href="https://open-meteo.com" target="_blank" class="text-decoration-none">Open‑Meteo</a> · Sin API Key · Interfaz ligera
-    </footer>
   </main>
+  </div>
 
-  <!-- JavaScript (tu lógica actual) -->
+  <footer class="site-footer mt-auto">
+    <div class="footer-inner text-center">
+      <div class="footer-badges d-flex flex-wrap justify-content-center gap-2 mb-3">
+        <span class="footer-pill"><i class="fa-solid fa-cloud-sun me-1" aria-hidden="true"></i> Open‑Meteo</span>
+        <span class="footer-pill"><i class="fa-solid fa-key me-1" aria-hidden="true"></i> Sin API key</span>
+        <a href="https://github.com/EnithV/Weather_App" class="footer-pill footer-pill-link" target="_blank" rel="noopener noreferrer">
+          <i class="fab fa-github me-1" aria-hidden="true"></i> GitHub
+        </a>
+      </div>
+      <p class="footer-team mb-0">
+        <i class="fa-solid fa-user-astronaut footer-astro me-2" aria-hidden="true"></i>
+        Gicela Vargas · Generation Colombia
+      </p>
+    </div>
+  </footer>
+
+  <!-- Application logic (Open-Meteo API) -->
   <script>
     const GEOCODING = 'https://geocoding-api.open-meteo.com/v1/search';
     const FORECAST = 'https://api.open-meteo.com/v1/forecast';
