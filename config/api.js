@@ -19,6 +19,10 @@ export const RATE_LIMIT_WINDOW_MS = 60 * 1000;
 
 const isTest = process.env.NODE_ENV === 'test';
 
-/** Deshabilitados en NODE_ENV=test para no alterar las pruebas automatizadas. */
+/**
+ * Simulación de red para desarrollo local.
+ * SIMULATE_DELAY_MS > 0 retrasa respuestas; SIMULATE_FORCE_STATUS fuerza un error HTTP.
+ * Deshabilitados en NODE_ENV=test para no alterar las pruebas automatizadas.
+ */
 export const SIMULATE_DELAY_MS = isTest ? 0 : 0;
 export const SIMULATE_FORCE_STATUS = isTest ? null : null;
