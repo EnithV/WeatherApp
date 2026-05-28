@@ -13,13 +13,59 @@ function setStatus(text, isError = false) {
 function hideResults() {
   $result.classList.add('hidden');
   $multiResult.classList.add('hidden');
+  document.querySelector('.container')?.classList.remove('container--wide');
 }
 
-function setCell(row, text, className) {
-  const cell = document.createElement('td');
-  if (className) cell.className = className;
-  cell.textContent = text;
-  row.appendChild(cell);
+function createDetailItem(iconClass, label, value) {
+  const item = document.createElement('div');
+  item.className = 'detail-item';
+
+  const icon = document.createElement('i');
+  icon.className = iconClass;
+  icon.setAttribute('aria-hidden', 'true');
+
+  const labelEl = document.createElement('span');
+  labelEl.className = 'label';
+  labelEl.textContent = label;
+
+  const valueEl = document.createElement('span');
+  valueEl.className = 'value';
+  valueEl.textContent = value;
+
+  item.append(icon, labelEl, valueEl);
+  return item;
+}
+
+function createCompareCityCard(item) {
+  const card = document.createElement('article');
+  card.className = 'compare-city-card';
+
+  if (!item.ok) {
+    card.classList.add('compare-city-card--error');
+    const error = document.createElement('p');
+    error.className = 'compare-error mb-0';
+    error.textContent = `${item.city}: ${item.error}`;
+    card.appendChild(error);
+    return card;
+  }
+
+  const title = document.createElement('h3');
+  title.className = 'city-name compare-city-name';
+  const cacheNote = item.cached ? ' · caché' : '';
+  title.innerHTML = `<i class="bi bi-geo-alt-fill" aria-hidden="true"></i> <span></span>`;
+  title.querySelector('span').textContent = `${item.place.name}, ${item.place.country}${cacheNote}`;
+
+  const details = document.createElement('div');
+  details.className = 'weather-details compare-details';
+  details.append(
+    createDetailItem('bi bi-thermometer-half', 'Temperatura', `${item.weather.temperature} ${item.weather.temperatureUnit}`),
+    createDetailItem('bi bi-droplet', 'Humedad', `${item.weather.humidity} ${item.weather.humidityUnit}`),
+    createDetailItem('bi bi-wind', 'Viento', `${item.weather.windSpeed} ${item.weather.windSpeedUnit}`),
+    createDetailItem('bi bi-cloud-rain', 'Precipitación', `${item.weather.precipitation} ${item.weather.precipitationUnit}`),
+  );
+
+  card.append(title, details);
+  return card;
 }
 
 function showSingleResult(data) {
@@ -37,28 +83,10 @@ function showMultiResults(results) {
   $multiBody.replaceChildren();
 
   for (const item of results) {
-    const row = document.createElement('tr');
-
-    if (item.ok) {
-      const placeName = item.cached
-        ? `${item.place.name}, ${item.place.country} (caché)`
-        : `${item.place.name}, ${item.place.country}`;
-      setCell(row, placeName);
-      setCell(row, `${item.weather.temperature} ${item.weather.temperatureUnit}`);
-      setCell(row, `${item.weather.humidity} ${item.weather.humidityUnit}`);
-      setCell(row, `${item.weather.windSpeed} ${item.weather.windSpeedUnit}`);
-      setCell(row, `${item.weather.precipitation} ${item.weather.precipitationUnit}`);
-    } else {
-      const cell = document.createElement('td');
-      cell.colSpan = 5;
-      cell.className = 'text-danger';
-      cell.textContent = `${item.city}: ${item.error}`;
-      row.appendChild(cell);
-    }
-
-    $multiBody.appendChild(row);
+    $multiBody.appendChild(createCompareCityCard(item));
   }
 
+  document.querySelector('.container')?.classList.add('container--wide');
   $multiResult.classList.remove('hidden');
 }
 

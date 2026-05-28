@@ -69,21 +69,8 @@
       </section>
 
       <section id="multiResult" class="weather-card hidden" aria-label="Comparación de ciudades">
-        <h2 class="h5 text-center mb-3"><i class="bi bi-columns-gap"></i> Comparación de ciudades</h2>
-        <div class="table-responsive">
-          <table class="table table-compare">
-            <thead>
-              <tr>
-                <th>Ciudad</th>
-                <th>Temp.</th>
-                <th>Humedad</th>
-                <th>Viento</th>
-                <th>Precip.</th>
-              </tr>
-            </thead>
-            <tbody id="multiBody"></tbody>
-          </table>
-        </div>
+        <h2 class="h5 text-center compare-title mb-3"><i class="bi bi-columns-gap"></i> Comparación de ciudades</h2>
+        <div id="multiBody" class="compare-grid"></div>
       </section>
     </main>
   </div>
@@ -95,7 +82,7 @@
           <i class="fa-solid fa-cloud-sun me-1" aria-hidden="true"></i> Open‑Meteo
         </a>
         <span class="footer-pill"><i class="fa-solid fa-key me-1" aria-hidden="true"></i> Sin API key</span>
-        <a href="https://github.com/EnithV/Weather_App" class="footer-pill footer-pill-link" target="_blank" rel="noopener noreferrer">
+        <a href="https://github.com/EnithV/WeatherApp" class="footer-pill footer-pill-link" target="_blank" rel="noopener noreferrer">
           <i class="fab fa-github me-1" aria-hidden="true"></i> GitHub
         </a>
       </div>
