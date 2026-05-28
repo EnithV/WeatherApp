@@ -13,7 +13,7 @@ import {
 import {
   getWeatherForCity,
   getWeatherForCities,
-  parseCityList,
+  parseCitiesFromParams,
 } from './weather.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -94,11 +94,11 @@ async function serveStatic(req, res) {
 async function handleWeatherApi(req, res) {
   const url = new URL(req.url ?? '/', `http://${req.headers.host ?? 'localhost'}`);
   const city = url.searchParams.get('city');
-  const citiesParam = url.searchParams.get('cities');
+  const citiesValues = url.searchParams.getAll('cities');
 
   try {
-    if (citiesParam) {
-      const cities = parseCityList(citiesParam);
+    const cities = parseCitiesFromParams(citiesValues);
+    if (cities) {
       const results = await getWeatherForCities(cities);
       sendJson(res, 200, { results });
       return;

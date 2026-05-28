@@ -355,3 +355,20 @@ export function parseCityList(input) {
 
   return cities.map((c) => validateCityName(c));
 }
+
+/**
+ * Parsea ciudades desde query ?cities= (uno o varios parámetros).
+ * Varios ?cities= evita comas en la URL, que algunos proxies (p. ej. Render) rechazan.
+ */
+export function parseCitiesFromParams(citiesValues) {
+  if (!Array.isArray(citiesValues) || citiesValues.length === 0) {
+    return null;
+  }
+  if (citiesValues.length === 1) {
+    return parseCityList(citiesValues[0]);
+  }
+  if (citiesValues.length > MAX_CITIES_PER_REQUEST) {
+    throw new Error(`Máximo ${MAX_CITIES_PER_REQUEST} ciudades por consulta.`);
+  }
+  return citiesValues.map((c) => validateCityName(c));
+}

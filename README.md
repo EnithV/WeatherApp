@@ -83,7 +83,8 @@ La web **no llama a Open-Meteo directamente**: usa la API local, que aplica la m
 |--------|------|-------------|
 | GET | `/api/health` | Estado del servidor |
 | GET | `/api/weather?city=Bogotá` | Clima de una ciudad |
-| GET | `/api/weather?cities=Bogotá,Medellín` | Comparar hasta 5 ciudades |
+| GET | `/api/weather?cities=Bogotá&cities=Medellín` | Comparar hasta 5 ciudades (recomendado en Render) |
+| GET | `/api/weather?cities=Bogotá,Medellín` | Comparar ciudades en un solo parámetro (legacy) |
 
 Respuesta (una ciudad):
 

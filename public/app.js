@@ -62,15 +62,57 @@ function showMultiResults(results) {
   $multiResult.classList.remove('hidden');
 }
 
-async function fetchWeatherApi(query) {
-  const response = await fetch(`/api/weather?${query}`);
-  const data = await response.json();
+function splitCityInput(rawInput) {
+  return rawInput
+    .split(',')
+    .map((part) => part.trim())
+    .filter(Boolean);
+}
 
-  if (!response.ok) {
-    throw new Error(data.error || `Error ${response.status}`);
+function buildMultiCityQuery(rawInput) {
+  const cities = splitCityInput(rawInput);
+  if (cities.length === 0) {
+    throw new Error('Ingrese al menos una ciudad.');
+  }
+  return cities.map((city) => `cities=${encodeURIComponent(city)}`).join('&');
+}
+
+async function fetchWeatherApi(query, retries = 1) {
+  for (let attempt = 0; attempt <= retries; attempt += 1) {
+    const response = await fetch(`/api/weather?${query}`);
+    const contentType = response.headers.get('content-type') ?? '';
+    const text = await response.text();
+
+    if (!contentType.includes('application/json')) {
+      if (response.status === 404 && attempt < retries) {
+        await new Promise((resolve) => setTimeout(resolve, 2500));
+        continue;
+      }
+      if (response.status === 404) {
+        throw new Error('El servidor está iniciando. Espere unos segundos e intente de nuevo.');
+      }
+      throw new Error(`Respuesta inesperada del servidor (${response.status}).`);
+    }
+
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch {
+      if (attempt < retries) {
+        await new Promise((resolve) => setTimeout(resolve, 2500));
+        continue;
+      }
+      throw new Error('Respuesta inválida del servidor.');
+    }
+
+    if (!response.ok) {
+      throw new Error(data.error || `Error ${response.status}`);
+    }
+
+    return data;
   }
 
-  return data;
+  throw new Error('No se pudo consultar el clima.');
 }
 
 $form.addEventListener('submit', async (ev) => {
@@ -84,11 +126,12 @@ $form.addEventListener('submit', async (ev) => {
     return;
   }
 
-  const isMulti = rawInput.includes(',');
+  const cityList = splitCityInput(rawInput);
+  const isMulti = cityList.length > 1;
 
   try {
     if (isMulti) {
-      const data = await fetchWeatherApi(`cities=${encodeURIComponent(rawInput)}`);
+      const data = await fetchWeatherApi(buildMultiCityQuery(rawInput));
       showMultiResults(data.results);
       setStatus(`${data.results.length} ciudades consultadas.`);
     } else {

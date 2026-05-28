@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { validateCityName, parseCityList, MAX_CITY_LENGTH } from '../src/weather.js';
+import { validateCityName, parseCityList, parseCitiesFromParams, MAX_CITY_LENGTH } from '../src/weather.js';
 
 describe('validateCityName', () => {
   it('acepta nombres válidos con acentos y guiones', () => {
@@ -33,5 +33,23 @@ describe('parseCityList', () => {
 
   it('rechaza lista vacía', () => {
     assert.throws(() => parseCityList('  ,  '), /al menos una ciudad/);
+  });
+});
+
+describe('parseCitiesFromParams', () => {
+  it('parsea un parámetro cities con comas internas', () => {
+    assert.deepEqual(parseCitiesFromParams(['Bogotá, Medellín']), ['Bogotá', 'Medellín']);
+  });
+
+  it('parsea varios parámetros cities (sin comas en la URL)', () => {
+    assert.deepEqual(parseCitiesFromParams(['Bogotá', 'Medellín', 'Londres']), [
+      'Bogotá',
+      'Medellín',
+      'Londres',
+    ]);
+  });
+
+  it('devuelve null cuando no hay parámetros', () => {
+    assert.equal(parseCitiesFromParams([]), null);
   });
 });
