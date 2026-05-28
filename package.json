@@ -1,11 +1,14 @@
 {
   "name": "weather-app",
-  "version": "1.0.0",
-  "description": "Aplicación de clima sencilla en Node.js usando la API de Open-Meteo.",
+  "version": "2.0.0",
+  "description": "Aplicación de clima con CLI, servidor HTTP y API local sobre Open-Meteo.",
   "type": "module",
   "main": "src/index.js",
   "scripts": {
-    "start": "node src/index.js"
+    "start": "node src/index.js",
+    "start:web": "node src/server.js",
+    "test": "node --test tests/*.test.js",
+    "test:watch": "node --test --watch tests/*.test.js"
   },
   "keywords": [
     "weather",

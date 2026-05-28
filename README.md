@@ -1,58 +1,61 @@
 # Weather App
 
-Aplicación de clima sencilla en Node.js que recibe el nombre de una ciudad desde la terminal, consulta la API gratuita de Open-Meteo y muestra en consola temperatura, humedad, velocidad del viento y precipitación con unidades dinámicas.
+Aplicación de clima en Node.js que consulta [Open-Meteo](https://open-meteo.com), con **CLI**, **servidor HTTP** e **interfaz web**. Incluye caché en memoria, consulta de varias ciudades, reintentos automáticos, pruebas automatizadas y prácticas de seguridad documentadas.
 
 ## Estructura del proyecto
 
-- `src/`
-  - `index.js` - entrada principal y manejo de argumentos.
-  - `weather.js` - funciones para consultar Open-Meteo y procesar los resultados.
-- `config/`
-  - `api.js` - URLs de los endpoints de Open-Meteo.
-- `package.json` - configuración del proyecto y dependencias.
-- `.gitignore` - archivos ignorados por Git.
+```
+Weather_App/
+├── config/
+│   └── api.js          # URLs, TTL de caché, puerto, límites
+├── src/
+│   ├── index.js        # CLI (una o varias ciudades)
+│   ├── server.js       # Servidor HTTP + API REST + archivos estáticos
+│   ├── weather.js      # Lógica compartida (API, validación, caché)
+│   └── cache.js        # Caché en memoria con TTL
+├── public/
+│   ├── index.html      # Interfaz web
+│   ├── app.js          # Cliente que consume /api/weather
+│   └── styles.css
+├── tests/              # Pruebas con node:test
+├── LICENSE             # MIT
+└── package.json
+```
+
+## Requisitos
+
+- Node.js 18+ (usa `fetch` nativo y `node:test`)
 
 ## Instalación
-
-1. Abre un terminal en el directorio del proyecto.
-2. Instala dependencias (si es necesario):
 
 ```bash
 npm install
 ```
 
-> Nota: este proyecto usa la API nativa de `fetch` disponible en entornos Node.js recientes.
+No hay dependencias externas de producción.
 
-## Uso
+## Uso — CLI
 
-Ejecuta la aplicación con el nombre de ciudad entre comillas:
+**Una ciudad:**
 
 ```bash
 node src/index.js "Bogotá"
-```
-
-También puedes usar el script `start` si está configurado en `package.json`:
-
-```bash
+# o
 npm start -- "Bogotá"
 ```
 
-## Formato esperado de respuesta
+**Varias ciudades (comparación):**
 
-La aplicación imprime en consola el nombre de la ciudad, el país y los detalles actuales del clima: temperatura, humedad, velocidad del viento y precipitación. Las unidades se obtienen dinámicamente de la API.
-
-```text
-Ciudad: Bogotá, Colombia
-Temperatura actual: 19.4 °C
-Humedad: 82 %
-Velocidad del viento: 5.4 km/h
-Precipitación: 0.0 mm
+```bash
+node src/index.js --cities "Bogotá" "Medellín" "Londres"
+node src/index.js --cities "Bogotá,Medellín,Londres"
 ```
 
-### Ejemplo de salida real
+Salida de ejemplo:
 
 ```text
 Consultando clima para: Bogotá...
+
 Ciudad: Bogotá, Colombia
 Temperatura actual: 19.4 °C
 Humedad: 82 %
@@ -60,63 +63,114 @@ Velocidad del viento: 5.4 km/h
 Precipitación: 0.0 mm
 ```
 
+## Uso — Interfaz web
+
+1. Inicia el servidor:
+
+```bash
+npm run start:web
+```
+
+2. Abre en el navegador: **http://localhost:3000**
+
+3. Busca una ciudad (`Bogotá`) o varias separadas por coma (`Bogotá, Medellín, Londres`).
+
+La web **no llama a Open-Meteo directamente**: usa la API local, que aplica la misma lógica, caché y reintentos que la CLI.
+
+## API REST
+
+| Método | Ruta | Descripción |
+|--------|------|-------------|
+| GET | `/api/health` | Estado del servidor |
+| GET | `/api/weather?city=Bogotá` | Clima de una ciudad |
+| GET | `/api/weather?cities=Bogotá,Medellín` | Comparar hasta 5 ciudades |
+
+Respuesta (una ciudad):
+
+```json
+{
+  "city": "Bogotá",
+  "cached": false,
+  "place": { "name": "Bogotá", "country": "Colombia", "latitude": 4.71, "longitude": -74.07 },
+  "weather": {
+    "temperature": 19.4,
+    "temperatureUnit": "°C",
+    "humidity": 82,
+    "humidityUnit": "%",
+    "windSpeed": 5.4,
+    "windSpeedUnit": "km/h",
+    "precipitation": 0,
+    "precipitationUnit": "mm"
+  }
+}
+```
+
+Límite de tasa en el servidor: **30 solicitudes por minuto por IP** en `/api/weather`.
+
+## Funcionalidades avanzadas
+
+- **Caché en memoria** (10 min): evita consultas repetidas a Open-Meteo para la misma ciudad.
+- **Varias ciudades en paralelo** (máx. 3 simultáneas, hasta 5 por consulta): CLI con `--cities` y web con nombres separados por coma.
+- **Interfaz web** con vista individual y tabla comparativa.
+- **Reintentos** con backoff ante errores 429/5xx y timeout de 5 s.
+
 ## Manejo de errores
 
-La aplicación detecta varios casos comunes y muestra mensajes claros:
+- Ciudad vacía o con caracteres no permitidos
+- Ciudad no encontrada en geocodificación
+- Timeout de red (5 s)
+- Reintentos automáticos (hasta 2) en 429 y errores 5xx
+- JSON inválido o datos incompletos de la API
+- Límite de ciudades por consulta (5) y rate limit en el servidor (30/min)
 
-- Ciudad inválida o vacía:
-  - Si no se proporciona ningún argumento o sólo espacios, se muestra un mensaje de uso válido.
-- Ciudad no encontrada:
-  - Si Open-Meteo no devuelve resultados para la ciudad solicitada, la salida indica que la ciudad no existe.
-- Error de red o API:
-  - Si hay un problema de conexión o la API responde con un error HTTP, se muestra `Error al consultar el clima:` seguido del detalle.
-- Error interno de datos:
-  - Si la respuesta de la API no contiene los campos esperados, se lanza un error con contexto específico.
-- Reintentos automáticos:
-  - Si la API responde con `429` o hay un error de servidor transitorio, la función intenta nuevamente hasta 2 veces con backoff exponencial suave.
+## Pruebas
 
-## Validación y seguridad
+```bash
+npm test
+```
 
-- En el frontend se valida que el nombre de la ciudad no esté vacío, no supere 100 caracteres y solo contenga caracteres razonables (letras, números, espacios y algunos símbolos comunes).
-- El texto de ciudad y país se muestra con `textContent` en lugar de `innerHTML` para evitar riesgos de inyección de contenido en la UI.
+Incluye pruebas de validación, `fetchJson` con mocks, geocodificación, caché y expiración TTL. Las pruebas **no** llaman a Open-Meteo en vivo.
+
+## Seguridad
+
+- Validación unificada de nombres de ciudad (`validateCityName`) en CLI, servidor y parseo de API.
+- URLs construidas con `URLSearchParams` (sin concatenación insegura).
+- La interfaz muestra datos con `textContent` (no `innerHTML`) para evitar XSS.
+- `.env` está en `.gitignore`; Open-Meteo no requiere API key para este uso.
+- Rate limiting en `/api/weather`.
+- Rutas de archivos estáticos validadas para evitar path traversal.
+- Simulación de errores de red (`SIMULATE_*` en `config/api.js`) desactivada cuando `NODE_ENV=test`.
+
+## Licencia y consideraciones éticas
+
+- **Licencia del proyecto:** [MIT](LICENSE).
+- **Datos meteorológicos:** provistos por [Open-Meteo](https://open-meteo.com). El uso debe ajustarse a sus términos; la caché y el límite de solicitudes contribuyen a un consumo responsable del servicio.
+- **Credenciales:** no incluir claves API ni secretos en el repositorio. Variables sensibles deben residir en `.env` (excluido por `.gitignore`).
+- **Privacidad:** la aplicación no persiste datos personales; únicamente envía nombres de ciudad a Open-Meteo para la consulta.
+- **Dependencias externas:** la interfaz web utiliza Bootstrap e iconos desde CDN; en entornos restrictivos conviene alojar esos recursos de forma local.
 
 ## Notas sobre la API
 
-- La aplicación utiliza Open-Meteo para obtener datos de clima.
-- Se usan dos endpoints:
-  - geocodificación (`geocoding-api.open-meteo.com`) para convertir el nombre de ciudad en coordenadas.
-  - forecast (`api.open-meteo.com/v1/forecast`) para obtener la temperatura actual.
-- Open-Meteo es gratuita y no requiere clave API para estas consultas.
-- La temperatura se solicita en Celsius (`temperature_unit=celsius`).
+- Geocodificación: `geocoding-api.open-meteo.com`
+- Pronóstico: `api.open-meteo.com/v1/forecast`
+- Temperatura en Celsius; unidades dinámicas en la respuesta.
 
-## Estructura de datos y uso de módulos
+## Desarrollo
 
-Si deseas usar la lógica en otro proyecto, puedes importar las funciones desde `src/weather.js`:
+| Script | Acción |
+|--------|--------|
+| `npm start -- "Ciudad"` | CLI una ciudad |
+| `npm run start:web` | Servidor + UI en puerto 3000 |
+| `npm test` | Ejecutar pruebas |
+| `npm run test:watch` | Pruebas en modo watch |
+
+Variables opcionales: `PORT` (puerto del servidor), `NODE_ENV=test` (para pruebas).
+
+## Importar la lógica
 
 ```js
-import { getCoordinates, getWeatherDetails } from './src/weather.js';
+import { getWeatherForCity, getWeatherForCities } from './src/weather.js';
 
-const coords = await getCoordinates('Bogotá');
-const details = await getWeatherDetails(coords.latitude, coords.longitude);
+const bogota = await getWeatherForCity('Bogotá');
+const comparison = await getWeatherForCities(['Bogotá', 'Medellín']);
 ```
-
-La nueva función `getWeatherDetails` devuelve todos los datos del clima actual con sus unidades correspondientes:
-
-- `getCoordinates(city)` retorna:
-  - `latitude` (number)
-  - `longitude` (number)
-  - `name` (string)
-  - `country` (string)
-- `getWeatherDetails(latitude, longitude)` retorna:
-  - `temperature` (number)
-  - `temperatureUnit` (string)
-  - `humidity` (number)
-  - `humidityUnit` (string)
-  - `windSpeed` (number)
-  - `windSpeedUnit` (string)
-  - `precipitation` (number)
-  - `precipitationUnit` (string)
-
-## Notas finales
-
-Este proyecto es ideal para aprender cómo consumir APIs desde Node.js y cómo estructurar la lógica de consulta a servicios externos. Si quieres, también puedo ayudarte a ampliar la app con pronóstico de varios días, viento, humedad o texto enriquecido.
