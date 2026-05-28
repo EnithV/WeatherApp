@@ -2,10 +2,13 @@
 
 Aplicación de clima en Node.js que consulta [Open-Meteo](https://open-meteo.com), con **CLI**, **servidor HTTP** e **interfaz web**. Incluye caché en memoria, consulta de varias ciudades, reintentos automáticos, pruebas automatizadas y prácticas de seguridad documentadas.
 
+**Demo en vivo:** [weatherapp-6yp3.onrender.com](https://weatherapp-6yp3.onrender.com/)  
+**Repositorio:** [github.com/EnithV/WeatherApp](https://github.com/EnithV/WeatherApp)
+
 ## Estructura del proyecto
 
 ```
-Weather_App/
+WeatherApp/
 ├── config/
 │   └── api.js          # URLs, TTL de caché, puerto, límites
 ├── src/
@@ -21,7 +24,6 @@ Weather_App/
 ├── LICENSE             # MIT
 └── package.json
 ```
-
 ## Requisitos
 
 - Node.js 18+ (usa `fetch` nativo y `node:test`)
@@ -73,10 +75,18 @@ npm run start:web
 
 2. Abre en el navegador: **http://localhost:3000**
 
-3. Busca una ciudad (`Bogotá`) o varias separadas por coma (`Bogotá, Medellín, Londres`).
+3. Busca una ciudad (`Bogotá`) o varias separadas por coma (`Bogotá, Medellín, Londres`). La comparación muestra **tarjetas por ciudad** con el mismo diseño que la vista individual.
 
 La web **no llama a Open-Meteo directamente**: usa la API local, que aplica la misma lógica, caché y reintentos que la CLI.
 
+## Despliegue en Render
+
+1. Conecta el repositorio [EnithV/WeatherApp](https://github.com/EnithV/WeatherApp).
+2. **Build command:** `npm install`
+3. **Start command:** `npm run start:web`
+4. Render asigna el puerto vía `PORT`; la app lo lee en `config/api.js`.
+
+En el plan gratuito el servicio puede tardar unos segundos en despertar tras inactividad. La interfaz reintenta automáticamente si el servidor aún no responde.
 ## API REST
 
 | Método | Ruta | Descripción |
@@ -112,9 +122,8 @@ Límite de tasa en el servidor: **30 solicitudes por minuto por IP** en `/api/we
 
 - **Caché en memoria** (10 min): evita consultas repetidas a Open-Meteo para la misma ciudad.
 - **Varias ciudades en paralelo** (máx. 3 simultáneas, hasta 5 por consulta): CLI con `--cities` y web con nombres separados por coma.
-- **Interfaz web** con vista individual y tabla comparativa.
+- **Interfaz web** con vista individual y comparación en tarjetas (mismo estilo visual en ambos modos).
 - **Reintentos** con backoff ante errores 429/5xx y timeout de 5 s.
-
 ## Manejo de errores
 
 - Ciudad vacía o con caracteres no permitidos
